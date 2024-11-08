@@ -2,41 +2,49 @@
 
 A data pipeline that collects YouTube trending videos data, processes it through Kafka and Spark, stores it in Azure Synapse, and enables analysis through Looker Studio.
 
+## Architecture
+The pipeline follows these steps:
+1. Fetches trending videos data from YouTube API every 15 minutes
+2. Streams data through Kafka for real-time processing
+3. Processes and transforms data using Spark Streaming
+4. Stores results in Azure Synapse Analytics
+5. Prepares formatted data for Looker Studio visualization
+
 ## Tech Stack
 - **Data Collection**: YouTube Data API v3
 - **Streaming**: Apache Kafka
 - **Processing**: Apache Spark
-- **Storage**: PostgreSQL, Azure Synapse
+- **Storage**: Azure Synapse Analytics
 - **Containerization**: Docker, Docker Compose
 - **Visualization**: Looker Studio
 - **Language**: Python 3.9+
 
-## Project Structure
-```
-├── data/
-│   ├── looker/          # Prepared data for Looker Studio
-│   ├── raw/             # Raw JSON data from YouTube API
-│   └── temp/            # Temporary files for processing
-├── scripts/
-│   └── init_database.sh # Database initialization script
-├── src/
-│   ├── database/
-│   │   └── schema.sql   # Database schema definitions
-│   ├── ingestion/
-│   │   ├── kafka_consumer.py
-│   │   ├── kafka_producer.py
-│   │   └── youtube_fetcher.py
-│   ├── monitoring/
-│   │   ├── pipeline_monitor.py
-│   │   └── synapse_data_checker.py
-│   ├── processing/
-│   │   ├── spark_streaming.py
-│   │   └── youtube_synapse_uploader.py
-│   └── visualization/
-│       └── looker_data.py
-├── docker-compose.yml
-└── requirements.txt
-```
+
+## Prerequisites
+
+### YouTube API Setup
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable YouTube Data API v3:
+   - Go to APIs & Services > Library
+   - Search for "YouTube Data API v3"
+   - Click Enable
+4. Create credentials:
+   - Go to APIs & Services > Credentials
+   - Click Create Credentials > API Key
+   - Copy the API key
+
+### Azure Synapse Setup
+1. Create an Azure account if you don't have one
+2. Create a Synapse workspace:
+   - Go to Azure Portal
+   - Search for "Synapse Analytics"
+   - Create a new workspace
+3. Get storage account details:
+   - In your workspace, go to Storage Settings
+   - Copy the storage account URL
+   - Create a container or use the default one
+   - Note down the container name
 
 ## Setup
 1. Clone the repository and install dependencies:
@@ -53,75 +61,107 @@ SYNAPSE_STORAGE_ACCOUNT_URL=your_synapse_url
 SYNAPSE_CONTAINER_NAME=your_container_name
 ```
 
-3. Initialize the database and Kafka:
+3. Start Kafka:
 ```bash
-./scripts/init_database.sh
+docker-compose up -d
 ```
 
 ## Running the Pipeline
+
 1. Start the Kafka producer to fetch YouTube data:
 ```bash
 python src/ingestion/kafka_producer.py
 ```
+This will fetch trending videos every 15 minutes and send them to Kafka.
 
 2. Start the Spark streaming processor:
 ```bash
 python src/processing/spark_streaming.py
 ```
+This processes the data and prepares it for storage.
 
-3. Monitor the pipeline:
-```bash
-python src/monitoring/pipeline_monitor.py
-```
-
-4. Check data in Synapse:
+3. Check data in Synapse:
 ```bash
 python src/monitoring/synapse_data_checker.py
 ```
+Verifies data quality and schema compliance in Azure Synapse.
 
-5. Prepare data for Looker:
+4. Prepare data for Looker:
 ```bash
 python src/visualization/looker_data.py
 ```
+Formats and prepares data for Looker Studio visualization.
 
-## Database Schema
-### Video Metrics Table
-```sql
-CREATE TABLE video_metrics (
-    id SERIAL PRIMARY KEY,
-    video_id VARCHAR(20) NOT NULL,
-    title TEXT NOT NULL,
-    channel_title VARCHAR(255) NOT NULL,
-    publish_time TIMESTAMP NOT NULL,
-    fetch_time TIMESTAMP NOT NULL,
-    processing_time TIMESTAMP NOT NULL,
-    view_count BIGINT NOT NULL,
-    like_count BIGINT NOT NULL,
-    comment_count BIGINT NOT NULL,
-    duration_seconds INTEGER NOT NULL,
-    category_id VARCHAR(10) NOT NULL
-);
-```
 
-### Video Tags Table
-```sql
-CREATE TABLE video_tags (
-    id SERIAL PRIMARY KEY,
-    video_id VARCHAR(20) NOT NULL,
-    tag VARCHAR(255) NOT NULL
-);
-```
 
-## Key Features
-- Real-time trending videos data collection
-- Scalable data processing with Kafka and Spark
-- Azure Synapse Analytics integration
-- Automated monitoring and data quality checks
-- Data preparation for Looker Studio visualizations
+## Data Structure
+The pipeline processes and stores two main data types:
+
+### Video Metrics
+Data about each trending video:
+- video_id: Unique video identifier
+- title: Video title
+- channel_title: Channel name
+- publish_time: When video was published
+- fetch_time: When data was collected
+- processing_time: When data was processed
+- view_count: Total views
+- like_count: Total likes
+- comment_count: Total comments
+- duration_seconds: Video duration
+- category_id: YouTube category ID
+
+### Video Tags
+Tags associated with each video:
+- video_id: Video identifier
+- tag: Individual tag text
+
+
+## Visualization in Looker Studio
+After preparing the data using `looker_data.py`, you'll find two CSV files in the `data/looker` directory:
+- `video_metrics.csv`: Contains all video metrics
+- `video_tags.csv`: Contains video tags data
+
+To create visualizations:
+
+1. Go to [Looker Studio](https://lookerstudio.google.com/)
+2. Click "Create" and select "New Report"
+3. Click "Create new data source" and select "File Upload"
+4. First upload `video_metrics.csv`:
+   - Set date fields: publish_time, fetch_time, processing_time
+   - Ensure numeric fields (view_count, like_count, etc.) are set as numbers
+   - Click "Connect"
+
+5. Add `video_tags.csv` as an additional data source:
+   - Click "Add data" in the Resources menu
+   - Upload `video_tags.csv`
+   - Ensure both video_id and tag are set as text fields
+   - Click "Connect"
+
+6. Create a blend:
+   - Click "Add a Blend"
+   - Select both data sources
+   - Join using "video_id" as the join key
+   - Click "Save"
+
+7. You can now create various visualizations:
+   - Trending videos by view count
+   - Tag clouds for popular topics
+   - Channel performance metrics
+   - Time-based trends
+   - Engagement rate analysis
+   - Category distribution
+
+
+It will look something like this:
+
+![Screenshot 2024-11-07 at 8 07 15 PM](https://github.com/user-attachments/assets/7374709a-b690-4382-8e44-a6c8f5eb1413)
+
+It can be viewed here:
+https://lookerstudio.google.com/reporting/1a5ffb1c-70f4-4123-8ecd-079740a55d3b/page/YEiME/edit
 
 ## Requirements
 - Python 3.9+
 - Docker and Docker Compose
 - YouTube Data API key
 - Azure account with Synapse Analytics access
-- PostgreSQL 14
