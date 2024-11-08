@@ -155,7 +155,7 @@ To create visualizations:
 
 It will look something like this:
 
-![Screenshot 2024-11-07 at 8 07 15 PM](https://github.com/user-attachments/assets/7374709a-b690-4382-8e44-a6c8f5eb1413)
+![Screenshot 2024-11-07 at 8 09 29 PM](https://github.com/user-attachments/assets/720cbe74-e1f5-45c1-9c84-88da7d24e29e)
 
 It can be viewed here:
 https://lookerstudio.google.com/reporting/1a5ffb1c-70f4-4123-8ecd-079740a55d3b/page/YEiME/edit
