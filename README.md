@@ -4,7 +4,7 @@ A data pipeline that collects YouTube trending videos data, processes it through
 
 ## Architecture
 The pipeline follows these steps:
-1. Fetches trending videos data from YouTube API every 15 minutes
+1. Fetches trending videos data from YouTube API 
 2. Streams data through Kafka for real-time processing
 3. Processes and transforms data using Spark Streaming
 4. Stores results in Azure Synapse Analytics
